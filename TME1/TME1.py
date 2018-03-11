@@ -98,7 +98,7 @@ def train(datax, datay):
 
 def main():
     global datax, datay;
-    score_mat = train(datax, datay)
+    score_mat = train(datax[:1000], datay[:1000])
     print(*score_mat, sep='\n')
     return 0
 
