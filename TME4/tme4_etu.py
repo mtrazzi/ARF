@@ -80,7 +80,6 @@ class Lineaire(object):
         D = datax.shape[1]
         self.w = np.random.random((1,D))
 
-        i = 0
         for i in range(self.max_iter):
             self.w = self.w - self.eps * self.loss_g(datax, datay, self.w)
         return self.w
@@ -164,9 +163,8 @@ if __name__=="__main__":
     plot_frontiere(trainx,perceptron.predict,200)
     plot_data(trainx,trainy)
 
-"""
-    datay_train
-    # Données USPO
+
+    # Données USPS
     datax_train, datay_train = load_usps("USPS_test.txt")
     datax_test, datay_test = load_usps("USPS_train.txt")
     perceptron = Lineaire(hinge,hinge_g,max_iter=1000,eps=0.1)
@@ -181,18 +179,16 @@ if __name__=="__main__":
     two_class_datay_test = datay_test[np.where(np.logical_or(datay_test == 6,datay_test == 9))]
     labely_test = np.sign(two_class_datay_test - 7)
 
-
     perceptron.fit(two_class_datax_train, labely_train)
     print("Erreur 2 classes 6/9: train %f, test %f"% (perceptron.score(two_class_datax_train,labely_train),perceptron.score(two_class_datax_test,labely_test)))
 
-    #1 vs 2
+    #1 vs 8
     two_class_datax_train = datax_train[np.where(np.logical_or(datay_train == 1,datay_train == 8))]
     two_class_datay_train = datay_train[np.where(np.logical_or(datay_train == 1,datay_train == 8))]
     labely_train = np.sign(two_class_datay_train - 2)
     two_class_datax_test = datax_test[np.where(np.logical_or(datay_test == 1,datay_test == 8))]
     two_class_datay_test = datay_test[np.where(np.logical_or(datay_test == 1,datay_test == 8))]
     labely_test = np.sign(two_class_datay_test - 2)
-
 
     perceptron.fit(two_class_datax_train, labely_train)
     print("Erreur 2 classes 1/8: train %f, test %f"% (perceptron.score(two_class_datax_train,labely_train),perceptron.score(two_class_datax_test,labely_test)))
@@ -204,4 +200,3 @@ if __name__=="__main__":
     labely_test = 2 * (datay_test == 6) - 1
     perceptron.fit(datax_train, labely_train)
     print("Erreur one vs all: train %f, test %f"% (perceptron.score(datax_train,labely_train),perceptron.score(datax_test,labely_test)))
-"""
