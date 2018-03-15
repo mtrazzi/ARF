@@ -137,7 +137,7 @@ class Learner(object):
         
     def grad_loss(self, datax, datay, w):
         temp = (2*datay-1) * np.dot(datax, w.T)
-        return - np.sum(datax / (1 + np.exp(temp)), axis=0)
+        return np.mean(-(2*datay-1)*(datax)/(1+np.exp(temp)), axis=0)
 
     def predict(self,datax):
         return np.sign(1/(1 + np.exp(- np.dot(datax, self.w.T))) - 0.5).reshape(-1)
@@ -173,13 +173,13 @@ def main():
     labely_test = np.sign(datay_test_2 - 2)
 
     # Construction et entrainement
-    model = Learner(max_iter = 100, eps = 0.5)
+    model = Learner(max_iter = 1000, eps = 0.05)
     model.fit(datax_train_2, labely_train)
     print("Erreur de classification 6/9: train %f, test %f"\
           % (model.score(datax_train_2,labely_train),model.score(datax_test_2,labely_test)))
 
     # Essai classification 1 versus toutes les autres
-    model2 = Learner(max_iter = 100, eps = 0.5)
+    model2 = Learner(max_iter = 1000, eps = 0.05)
     labely_train = 2 * (datay_train == 6) - 1
     labely_test = 2 * (datay_test == 6) - 1
     model2.fit(datax_train, labely_train)
@@ -189,14 +189,13 @@ def main():
     # Essai aussi avec gen_arti pour tests de performances
     trainx, trainy = gen_arti(nbex=1000, data_type=0,epsilon=1)
     testx, testy = gen_arti(nbex=1000, data_type=0,epsilon=1)
-    model1 = Learner(max_iter = 100, eps = 0.01)
+    model1 = Learner(max_iter = 100, eps = 0.1)
     model1.fit(trainx,trainy)
     print("Erreur de classification gen_arti: train %f, test %f"\
           % (model1.score(trainx,trainy),model1.score(testx,testy)))
     plt.figure()
     plot_frontiere(trainx, model1.predict, 200)
     plot_data(trainx, trainy)
-
 
 
 if __name__ == "__main__":
