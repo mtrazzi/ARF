@@ -11,62 +11,70 @@ def decorator_vec(fonc):
         return fonc(datax,datay,w,*args,**kwargs)
     return vecfonc
 
+########################################
+# Implémentation
+########################################
+
+# Moindres carrés
 @decorator_vec
 def mse(datax,datay,w):
-
     pred = np.dot(datax, w.T)
-    res = np.sum((pred - datay)**2)
-    return (1/np.shape(datax)[0]) * res
+    return np.mean((pred-datay)**2)
 
-@decorator_vec
+# Gradient moindres carrés
 def mse_g(datax,datay,w):
-
     M = datay - np.dot(datax, w.T)
     return (-2/np.shape(datax)[0]) * np.sum(np.dot(datax.T, M))
 
+# Hinge
 @decorator_vec
 def hinge(datax,datay,w):
+    return np.mean(np.maximum(0, -datay*np.dot(datax, w.T)))
 
-    return (1/np.shape(datax)[0]) * np.sum(np.maximum(0, -datay*np.dot(datax, w.T)))
-
+# Gradient hinge
 @decorator_vec
 def hinge_g(datax,datay,w):
-
    sign = np.sign(hinge(datax, datay, w))
-   res = - sign * datax * datay
-   return (1/np.shape(datax)[0]) * np.sum(res, axis=0)
+   return np.mean(( -sign * datax * datay), axis=0)
 
-
+# Classe d'apprentissage
 class Lineaire(object):
-    def __init__(self,loss=hinge,loss_g=hinge_g,max_iter=1000,eps=0.01):
+    
+    def __init__(self, loss=hinge, loss_g=hinge_g, max_iter=1000, eps=0.01, bias=False, project=None):
         """ :loss: fonction de cout
             :loss_g: gradient de la fonction de cout
             :max_iter: nombre d'iterations
             :eps: pas de gradient
         """
-        self.max_iter, self.eps = max_iter,eps
+        self.max_iter, self.eps = max_iter, eps
         self.loss, self.loss_g = loss, loss_g
-        self.bias = False
-        self.project = None
+        self.bias = bias
+        self.project = project
         self.base = None
 
     # A general function to add projections
-    def projection(self,datax):
-
+    def projection(self, datax):
         res = datax
         
+        # Si on souhaite une projection gaussienne
         if (self.project == "gauss"):
             res = np.zeros([datax.shape[0], self.base.shape[0]])
             for i, x in enumerate(datax):
                 for j, b in enumerate(self.base):
                     res[i,j] = np.exp(-np.linalg.norm(x-b)**2/0.1)
+        
+        # Transformation polynomiale (seulement pour 2 attributs)     
+        if (self.project == "polynomial" and datax.shape[1]==2):
+            res = np.column_stack([datax[:,0], datax[:,1], datax[:,0]*datax[:,1], datax[:,0]**2, datax[:,1]**2])
 
+        # Si on souhaite ajouter un biais
         if(self.bias):
             vector = np.ones((res.shape[0],1))
             res = np.column_stack([vector, res])
 
         return res
 
+    # Méthode d'apprentissage
     def fit(self,datax,datay,testx=None,testy=None):
         """ :datax: donnees de train
             :datay: label de train
@@ -75,22 +83,22 @@ class Lineaire(object):
         """
         datax = self.projection(datax)
         datay = datay.reshape(-1,1)
-        N = len(datay)
-        datax = datax.reshape(N,-1)
-        D = datax.shape[1]
-        self.w = np.random.random((1,D))
+        datax = datax.reshape(len(datay),-1)
+        self.w = np.random.random((1,datax.shape[1]))
 
         for i in range(self.max_iter):
             self.w = self.w - self.eps * self.loss_g(datax, datay, self.w)
         return self.w
 
-    def predict(self,datax):
+    # Méthode pour obtenir la valeur prédite par le modèle
+    def predict(self, datax):
         datax = self.projection(datax)
         if len(datax.shape)==1:
             datax = datax.reshape(1,-1)
         return np.sign(np.dot(datax, self.w.T)).reshape(-1)
 
-    def score(self,datax,datay):
+    # Score la réussite avec le vrai label et des exemples à classer
+    def score(self, datax, datay):
         return np.mean(self.predict(datax) != datay)
 
 # Utility functions
@@ -114,8 +122,7 @@ def plot_error(datax,datay,f,step=10):
     plt.show()
 
 
-
-if __name__=="__main__":
+def main():
 
     """ Tracer des isocourbes de l'erreur """
     plt.ion()
@@ -153,9 +160,7 @@ if __name__=="__main__":
 #    plot_data(trainx,trainy)
 
     # Hinge with gaussian transformation
-    perceptron = Lineaire(hinge,hinge_g,max_iter=1000,eps=0.1)
-    perceptron.bias = False
-    perceptron.project = "gauss"
+    perceptron = Lineaire(mse, mse_g, max_iter=1000, eps=0.1, bias=False, project="none")
     perceptron.base = base
     perceptron.fit(trainx,trainy)
     print("Erreur transformation : train %f, test %f"% (perceptron.score(trainx,trainy),perceptron.score(testx,testy)))
@@ -163,13 +168,14 @@ if __name__=="__main__":
     plot_frontiere(trainx,perceptron.predict,200)
     plot_data(trainx,trainy)
 
-
+    """
     # Données USPS
     datax_train, datay_train = load_usps("USPS_test.txt")
     datax_test, datay_test = load_usps("USPS_train.txt")
     perceptron = Lineaire(hinge,hinge_g,max_iter=1000,eps=0.1)
     perceptron.fit(datax_train,datay_train)
-    print("Erreur : train %f, test %f"% (perceptron.score(datax_train,datay_train),perceptron.score(datax_test,datay_test)))
+    print("Erreur : train %f, test %f"% (perceptron.score(datax_train,datay_train),\
+                                         perceptron.score(datax_test,datay_test)))
 
     #6 vs 9
     two_class_datax_train = datax_train[np.where(np.logical_or(datay_train == 6,datay_train == 9))]
@@ -180,7 +186,8 @@ if __name__=="__main__":
     labely_test = np.sign(two_class_datay_test - 7)
 
     perceptron.fit(two_class_datax_train, labely_train)
-    print("Erreur 2 classes 6/9: train %f, test %f"% (perceptron.score(two_class_datax_train,labely_train),perceptron.score(two_class_datax_test,labely_test)))
+    print("Erreur 2 classes 6/9: train %f, test %f"% (perceptron.score(two_class_datax_train,labely_train),\
+                                                      perceptron.score(two_class_datax_test,labely_test)))
 
     #1 vs 8
     two_class_datax_train = datax_train[np.where(np.logical_or(datay_train == 1,datay_train == 8))]
@@ -191,7 +198,8 @@ if __name__=="__main__":
     labely_test = np.sign(two_class_datay_test - 2)
 
     perceptron.fit(two_class_datax_train, labely_train)
-    print("Erreur 2 classes 1/8: train %f, test %f"% (perceptron.score(two_class_datax_train,labely_train),perceptron.score(two_class_datax_test,labely_test)))
+    print("Erreur 2 classes 1/8: train %f, test %f"% (perceptron.score(two_class_datax_train,labely_train),\
+                                                      perceptron.score(two_class_datax_test,labely_test)))
 
     #Uncomment to Plot the weights
     #print(*perceptron.w, sep='\n')
@@ -199,4 +207,9 @@ if __name__=="__main__":
     labely_train = 2 * (datay_train == 6) - 1
     labely_test = 2 * (datay_test == 6) - 1
     perceptron.fit(datax_train, labely_train)
-    print("Erreur one vs all: train %f, test %f"% (perceptron.score(datax_train,labely_train),perceptron.score(datax_test,labely_test)))
+    print("Erreur one vs all: train %f, test %f"% (perceptron.score(datax_train,labely_train),\
+                                                   perceptron.score(datax_test,labely_test)))
+    """
+    
+if __name__=="__main__":
+    main()
