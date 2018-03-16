@@ -5,6 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import cm
 from arftools import plot_data, plot_frontiere, gen_arti
+from mpl_toolkits.mplot3d import axes3d
 
 ########################################
 # Fonctions utilitaires
@@ -35,8 +36,8 @@ def load_usps(filename):
 def plot_nb_iter(f, df, x_init, eps, max_iter):
 	x_histo, f_histo, grad_histo = optimize(f, df, x_init, eps, max_iter)
 	plt.figure()
-	plt.scatter([i for i in range(len(x_histo))], f_histo, label="f")
-	plt.scatter([i for i in range(len(x_histo))], grad_histo, label="gradient")
+	plt.scatter(np.arange(len(x_histo)), f_histo, label="f")
+	plt.scatter(np.arange(len(x_histo)), grad_histo, label="gradient")
 	plt.legend()
 	plt.show()	
 
@@ -60,10 +61,19 @@ def plot_3d(f, df, x_init, eps, max_iter):
 			cmap=cm.gist_rainbow, linewidth=0, antialiased=False)
     fig.colorbar(surf)
     x_histo, f_histo, grad_histo = optimize(f, df, x_init, eps, max_iter)
-    ax.plot(x_histo[:,0], x_histo[:,1], f_histo.ravel(), color='black', label="optimisation")
+    ax.plot(x_histo[:,0], x_histo[:,1], f_histo.ravel(), color='black', label="trajectoire")
     plt.legend()
     plt.show()
     
+# Plot function and optimization trajectory for f1 and f2
+def plot_distance(f, df, x_init, eps, max_iter):
+    x_histo, f_histo, grad_histo = optimize(f, df, x_init, eps, max_iter)
+    x_dist = np.log(np.linalg.norm((x_histo - x_histo[-1]), axis=1))
+    plt.scatter(np.arange(len(x_dist)), x_dist, label="log distance à l'optimum")
+    plt.xticks(np.arange(0, len(x_dist), 2))
+    plt.legend()
+    plt.show()
+        
 ########################################
 # Algorithme de descente de gradient
 ########################################
@@ -150,16 +160,21 @@ class Learner(object):
 ########################################
 
 def main():
-    """
+    
     # Affichage de f et df en fonction du nombre d'itérations
     plot_nb_iter(f1, df1, 5, 0.1, 20)
     plot_nb_iter(f2, df2, 5, 0.1, 20)
     
     # Affichage 2D de f1, f2 et 3D de f3
-    plot_2d(f1, df1, 5, 0.1, 20)
-    plot_2d(f2, df2, 5, 0.1, 20)
-    plot_3d(f3, df3, np.array([-1,0]).reshape(1,2), 0.001, 20)
-    """
+    plot_2d(f1, df1, 5, 0.1, 30)
+    plot_2d(f2, df2, 5, 0.1, 30)
+    plot_3d(f3, df3, np.array([-1,-1]).reshape(1,2), 0.001, 20)
+    
+    # Affichage des distances à l'optimum de l'historique
+    plot_distance(f1, df1, 5, 0.1, 20)
+    plot_distance(f2, df2, 5, 0.1, 20)
+    plot_distance(f3, df3, np.array([-1,-1]).reshape(1,2), 0.001, 20)
+    
     # Regression linéaire avec données USPS
     datax_train, datay_train = load_usps("USPS_test.txt")
     datax_test, datay_test = load_usps("USPS_train.txt")
@@ -185,7 +200,7 @@ def main():
     model2.fit(datax_train, labely_train)
     print("Erreur one vs all: train %f, test %f"\
           % (model2.score(datax_train,labely_train),model2.score(datax_test,labely_test)))
-
+        
     # Essai aussi avec gen_arti pour tests de performances
     trainx, trainy = gen_arti(nbex=1000, data_type=0,epsilon=1)
     testx, testy = gen_arti(nbex=1000, data_type=0,epsilon=1)
@@ -196,7 +211,6 @@ def main():
     plt.figure()
     plot_frontiere(trainx, model1.predict, 200)
     plot_data(trainx, trainy)
-
 
 if __name__ == "__main__":
     main()
