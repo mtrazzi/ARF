@@ -85,10 +85,17 @@ class Lineaire(object):
         datay = datay.reshape(-1,1)
         datax = datax.reshape(len(datay),-1)
         self.w = np.random.random((1,datax.shape[1]))
+        
+        w_histo, f_histo, grad_histo = self.w, self.loss(datax, datay, self.w), self.loss_g(datax, datay, self.w)
+        
 
         for i in range(self.max_iter):
             self.w = self.w - self.eps * self.loss_g(datax, datay, self.w)
-        return self.w
+            w_histo = np.vstack((w_histo, self.w))
+            f_histo = np.vstack((f_histo, self.loss(datax, datay, self.w)))
+            grad_histo = np.vstack((grad_histo, self.loss_g(datax, datay, self.w)))
+        
+        return w_histo, f_histo, grad_histo
 
     # Méthode pour obtenir la valeur prédite par le modèle
     def predict(self, datax):
@@ -116,58 +123,132 @@ def show_usps(data):
     plt.show()
 
 def plot_error(datax,datay,f,step=10):
+    plt.figure()
     grid,x1list,x2list=make_grid(xmin=-4,xmax=4,ymin=-4,ymax=4)
     plt.contourf(x1list,x2list,np.array([f(datax,datay,w) for w in grid]).reshape(x1list.shape),25)
     plt.colorbar()
     plt.show()
-
+    
+def plot_trajectory(datax,datay,perceptron,step=10):
+    plt.figure()
+    w_histo, f_histo, grad_histo = perceptron.fit(datax,datay)
+    xmax, xmin = np.max(w_histo[:,0]), np.min(w_histo[:,0])
+    ymax, ymin = np.max(w_histo[:,1]), np.min(w_histo[:,1])
+    dev_x, dev_y = abs(xmax-xmin)/4, abs(ymax-ymin)/4 # defines a margin for border
+    dev_x += int(dev_x == 0)*5 # avoid dev_x = 0
+    dev_y += int(dev_y == 0)*5
+    grid,x1list,x2list=make_grid(xmin=xmin-dev_x,xmax=xmax+dev_y,ymin=ymin-dev_y,ymax=ymax+dev_y)
+    plt.contourf(x1list,x2list,np.array([perceptron.loss(datax,datay,w)\
+                                         for w in grid]).reshape(x1list.shape),25)
+    plt.colorbar()
+    plt.scatter(w_histo[:,0], w_histo[:,1], marker='+', color='black')
+    plt.show()
 
 def main():
 
-    """ Tracer des isocourbes de l'erreur """
+    # Création des données selon deux distributions gaussiennes
     plt.ion()
-    trainx,trainy = gen_arti(nbex=1000,data_type=0,epsilon=1)
-    testx,testy = gen_arti(nbex=1000,data_type=0,epsilon=1)
-    base = trainx[np.random.randint(trainx.shape[0], size=100), :] #base pour proj gaussienne
-#    plt.figure()
-#    plot_error(trainx,trainy,mse)
-#    plt.figure()
-#    plot_error(trainx,trainy,hinge)
+    trainx,trainy = gen_arti(nbex=1000, data_type=0, epsilon=1)
+    testx,testy = gen_arti(nbex=1000, data_type=0, epsilon=1)
+    # Base pour projection en distance gaussienne :
+    base = trainx[np.random.randint(trainx.shape[0], size=100),:]
     
-#    # MSE
-#    perceptron = Lineaire(mse,mse_g,max_iter=1000,eps=0.1)
-#    perceptron.fit(trainx,trainy)
-#    print("Erreur : train %f, test %f"% (perceptron.score(trainx,trainy),perceptron.score(testx,testy)))
-#    plt.figure()
-#    plot_frontiere(trainx,perceptron.predict,200)
-#    plot_data(trainx,trainy)
+    # Tracé de l'isocontour de l'erreur pour MSE et HINGE
+    plot_error(trainx,trainy,mse)
+    plot_error(trainx,trainy,hinge)
     
-#    # Hinge
-#    perceptron = Lineaire(hinge,hinge_g,max_iter=1000,eps=0.1)
-#    perceptron.fit(trainx,trainy)
-#    print("Erreur : train %f, test %f"% (perceptron.score(trainx,trainy),perceptron.score(testx,testy)))
-#    plt.figure()
-#    plot_frontiere(trainx,perceptron.predict,200)
-#    plot_data(trainx,trainy)
-    
-#    # Add bias
-#    perceptron = Lineaire(mse,mse_g,max_iter=1000,eps=0.1)
-#    perceptron.bias = True
-#    perceptron.fit(trainx,trainy)
-#    print("Erreur : train %f, test %f"% (perceptron.score(trainx,trainy),perceptron.score(testx,testy)))
-#    plt.figure()
-#    plot_frontiere(trainx,perceptron.predict,200)
-#    plot_data(trainx,trainy)
-
-    # Hinge with gaussian transformation
-    perceptron = Lineaire(mse, mse_g, max_iter=1000, eps=0.1, bias=False, project="none")
-    perceptron.base = base
+    # Modèle standard avec MSE
+    perceptron = Lineaire(mse,mse_g,max_iter=1000,eps=0.01)
     perceptron.fit(trainx,trainy)
-    print("Erreur transformation : train %f, test %f"% (perceptron.score(trainx,trainy),perceptron.score(testx,testy)))
+    print("\nErreur mse : train %f, test %f"% (perceptron.score(trainx,trainy),perceptron.score(testx,testy)))
     plt.figure()
     plot_frontiere(trainx,perceptron.predict,200)
     plot_data(trainx,trainy)
+    plot_trajectory(trainx,trainy,perceptron)
+    plt.show()
+    
+    # Modèle standard Hinge
+    perceptron = Lineaire(hinge,hinge_g,max_iter=1000,eps=0.1)
+    perceptron.fit(trainx,trainy)
+    print("\nErreur hinge : train %f, test %f"% (perceptron.score(trainx,trainy),perceptron.score(testx,testy)))
+    plt.figure()
+    plot_frontiere(trainx,perceptron.predict,200)
+    plot_data(trainx,trainy)
+    plot_trajectory(trainx,trainy,perceptron)
+    plt.show()
+    
+    # Modèle MSE avec biais
+    perceptron = Lineaire(mse,mse_g,max_iter=1000,eps=0.01, bias=True)
+    perceptron.fit(trainx,trainy)
+    print("\nErreur mse biais : train %f, test %f"\
+          % (perceptron.score(trainx,trainy),perceptron.score(testx,testy)))
+    plt.figure()
+    plot_frontiere(trainx,perceptron.predict,200)
+    plot_data(trainx,trainy)
+    plot_trajectory(trainx,trainy,perceptron)
+    plt.show()
 
+    # Modèle hinge avec biais
+    perceptron = Lineaire(hinge, hinge_g, max_iter=1000, eps=0.1, bias=True)
+    perceptron.bias = True
+    perceptron.fit(trainx,trainy)
+    print("\nErreur hinge biais : train %f, test %f"\
+          % (perceptron.score(trainx,trainy),perceptron.score(testx,testy)))
+    plt.figure()
+    plot_frontiere(trainx,perceptron.predict,200)
+    plot_data(trainx,trainy)
+    plot_trajectory(trainx,trainy,perceptron)
+    plt.show()
+
+    """ Beware when un-commenting : those models run very slowly """
+    
+    # Modèle mse avec projection gaussienne
+    perceptron = Lineaire(mse, mse_g, max_iter=1000, eps=0.01, bias=False, project="gauss")
+    perceptron.base = base
+    perceptron.fit(trainx,trainy)
+    print("\nErreur mse gauss : train %f, test %f"\
+          %(perceptron.score(trainx,trainy),perceptron.score(testx,testy)))
+    plt.figure()
+    plot_frontiere(trainx,perceptron.predict,200)
+    plot_data(trainx,trainy)
+    plot_trajectory(trainx,trainy,perceptron)
+    plt.show()
+
+    # Modèle hinge avec projection gaussienne
+    perceptron = Lineaire(hinge, hinge_g, max_iter=1000, eps=0.5, bias=False, project="gauss")
+    perceptron.base = base
+    perceptron.fit(trainx,trainy)
+    print("\nErreur hinge gauss : train %f, test %f"\
+          %(perceptron.score(trainx,trainy),perceptron.score(testx,testy)))
+    plt.figure()
+    plot_frontiere(trainx,perceptron.predict,200)
+    plot_data(trainx,trainy)
+    plot_trajectory(trainx,trainy,perceptron)
+    plt.show()
+
+    # Modèle mse avec projection polynomiale
+    perceptron = Lineaire(mse, mse_g, max_iter=100, eps=0.0005, bias=False, project="polynomial")
+    perceptron.fit(trainx,trainy)
+    print("\nErreur mse polynomial : train %f, test %f"\
+          %(perceptron.score(trainx,trainy),perceptron.score(testx,testy)))
+    plt.figure()
+    plot_frontiere(trainx,perceptron.predict,200)
+    plot_data(trainx,trainy)
+    plot_trajectory(trainx,trainy,perceptron)
+    plt.show()
+
+    # Modèle hinge avec projection polynomiale
+    perceptron = Lineaire(hinge, hinge_g, max_iter=100, eps=0.0005, bias=False, project="polynomial")
+    perceptron.fit(trainx,trainy)
+    print("\nErreur hinge polynomial : train %f, test %f"\
+          %(perceptron.score(trainx,trainy),perceptron.score(testx,testy)))
+    plt.figure()
+    plot_frontiere(trainx,perceptron.predict,200)
+    plot_data(trainx,trainy)
+    plot_trajectory(trainx,trainy,perceptron)
+    plt.show()
+    
+    
     """
     # Données USPS
     datax_train, datay_train = load_usps("USPS_test.txt")
@@ -210,6 +291,6 @@ def main():
     print("Erreur one vs all: train %f, test %f"% (perceptron.score(datax_train,labely_train),\
                                                    perceptron.score(datax_test,labely_test)))
     """
-    
+
 if __name__=="__main__":
     main()

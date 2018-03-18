@@ -70,7 +70,7 @@ def plot_distance(f, df, x_init, eps, max_iter):
     x_histo, f_histo, grad_histo = optimize(f, df, x_init, eps, max_iter)
     x_dist = np.log(np.linalg.norm((x_histo - x_histo[-1]), axis=1))
     plt.scatter(np.arange(len(x_dist)), x_dist, label="log distance à l'optimum")
-    plt.xticks(np.arange(0, len(x_dist), 2))
+    plt.xticks(np.arange(0, len(x_dist), 5))
     plt.legend()
     plt.show()
         
@@ -162,8 +162,8 @@ class Learner(object):
 def main():
     
     # Affichage de f et df en fonction du nombre d'itérations
-    plot_nb_iter(f1, df1, 5, 0.1, 20)
-    plot_nb_iter(f2, df2, 5, 0.1, 20)
+    plot_nb_iter(f1, df1, 5, 0.1, 30)
+    plot_nb_iter(f2, df2, 5, 0.1, 30)
     
     # Affichage 2D de f1, f2 et 3D de f3
     plot_2d(f1, df1, 5, 0.1, 30)
@@ -171,11 +171,11 @@ def main():
     plot_3d(f3, df3, np.array([-1,-1]).reshape(1,2), 0.001, 20)
     
     # Affichage des distances à l'optimum de l'historique
-    plot_distance(f1, df1, 5, 0.1, 20)
-    plot_distance(f2, df2, 5, 0.1, 20)
-    plot_distance(f3, df3, np.array([-1,-1]).reshape(1,2), 0.001, 20)
+    plot_distance(f1, df1, 5, 0.1, 30)
+    plot_distance(f2, df2, 5, 0.1, 30)
+    plot_distance(f3, df3, np.array([-1,-1]).reshape(1,2), 0.001, 50)
     
-    # Regression linéaire avec données USPS
+    # Regression logistique avec données USPS
     datax_train, datay_train = load_usps("USPS_test.txt")
     datax_test, datay_test = load_usps("USPS_train.txt")
     
@@ -204,7 +204,7 @@ def main():
     # Essai aussi avec gen_arti pour tests de performances
     trainx, trainy = gen_arti(nbex=1000, data_type=0,epsilon=1)
     testx, testy = gen_arti(nbex=1000, data_type=0,epsilon=1)
-    model1 = Learner(max_iter = 100, eps = 0.1)
+    model1 = Learner(max_iter = 100, eps = 0.01)
     model1.fit(trainx,trainy)
     print("Erreur de classification gen_arti: train %f, test %f"\
           % (model1.score(trainx,trainy),model1.score(testx,testy)))
