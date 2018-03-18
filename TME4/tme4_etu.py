@@ -144,6 +144,11 @@ def plot_trajectory(datax,datay,perceptron,step=10):
     plt.scatter(w_histo[:,0], w_histo[:,1], marker='+', color='black')
     plt.show()
 
+def plot_vector (w):
+    img = plt.imshow(w, cmap = "viridis", interpolation = 'none')
+    plt.colorbar()
+    plt.show(img)
+
 def main():
 
     # Création des données selon deux distributions gaussiennes
@@ -156,7 +161,7 @@ def main():
     # Tracé de l'isocontour de l'erreur pour MSE et HINGE
     plot_error(trainx,trainy,mse)
     plot_error(trainx,trainy,hinge)
-    
+    """
     # Modèle standard avec MSE
     perceptron = Lineaire(mse,mse_g,max_iter=1000,eps=0.01)
     perceptron.fit(trainx,trainy)
@@ -200,7 +205,7 @@ def main():
     plot_trajectory(trainx,trainy,perceptron)
     plt.show()
 
-    """ Beware when un-commenting : those models run very slowly """
+    # Beware when un-commenting : those models run very slowly
     
     # Modèle mse avec projection gaussienne
     perceptron = Lineaire(mse, mse_g, max_iter=1000, eps=0.01, bias=False, project="gauss")
@@ -227,7 +232,7 @@ def main():
     plt.show()
 
     # Modèle mse avec projection polynomiale
-    perceptron = Lineaire(mse, mse_g, max_iter=100, eps=0.0005, bias=False, project="polynomial")
+    perceptron = Lineaire(mse, mse_g, max_iter=100, eps=0.01, bias=False, project="polynomial")
     perceptron.fit(trainx,trainy)
     print("\nErreur mse polynomial : train %f, test %f"\
           %(perceptron.score(trainx,trainy),perceptron.score(testx,testy)))
@@ -238,7 +243,7 @@ def main():
     plt.show()
 
     # Modèle hinge avec projection polynomiale
-    perceptron = Lineaire(hinge, hinge_g, max_iter=100, eps=0.0005, bias=False, project="polynomial")
+    perceptron = Lineaire(hinge, hinge_g, max_iter=100, eps=0.1, bias=False, project="polynomial")
     perceptron.fit(trainx,trainy)
     print("\nErreur hinge polynomial : train %f, test %f"\
           %(perceptron.score(trainx,trainy),perceptron.score(testx,testy)))
@@ -247,9 +252,8 @@ def main():
     plot_data(trainx,trainy)
     plot_trajectory(trainx,trainy,perceptron)
     plt.show()
-    
-    
     """
+    
     # Données USPS
     datax_train, datay_train = load_usps("USPS_test.txt")
     datax_test, datay_test = load_usps("USPS_train.txt")
@@ -269,6 +273,7 @@ def main():
     perceptron.fit(two_class_datax_train, labely_train)
     print("Erreur 2 classes 6/9: train %f, test %f"% (perceptron.score(two_class_datax_train,labely_train),\
                                                       perceptron.score(two_class_datax_test,labely_test)))
+    plot_vector(perceptron.w)
 
     #1 vs 8
     two_class_datax_train = datax_train[np.where(np.logical_or(datay_train == 1,datay_train == 8))]
@@ -281,16 +286,16 @@ def main():
     perceptron.fit(two_class_datax_train, labely_train)
     print("Erreur 2 classes 1/8: train %f, test %f"% (perceptron.score(two_class_datax_train,labely_train),\
                                                       perceptron.score(two_class_datax_test,labely_test)))
+    plot_vector(perceptron.w)
 
-    #Uncomment to Plot the weights
-    #print(*perceptron.w, sep='\n')
     #6 vs all
     labely_train = 2 * (datay_train == 6) - 1
     labely_test = 2 * (datay_test == 6) - 1
     perceptron.fit(datax_train, labely_train)
     print("Erreur one vs all: train %f, test %f"% (perceptron.score(datax_train,labely_train),\
                                                    perceptron.score(datax_test,labely_test)))
-    """
+    plot_vector(perceptron.w)
+    
 
 if __name__=="__main__":
     main()
