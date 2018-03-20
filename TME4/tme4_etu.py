@@ -3,6 +3,12 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import cm
 
+
+########################################
+# Fonctions utilitaires
+########################################
+
+# Decorateur pour transformer les vecteurs en matrices
 def decorator_vec(fonc):
     def vecfonc(datax,datay,w,*args,**kwargs):
         if not hasattr(datay,"__len__"):
@@ -10,6 +16,66 @@ def decorator_vec(fonc):
         datax,datay,w =  datax.reshape(len(datay),-1),datay.reshape(-1,1),w.reshape((1,-1))
         return fonc(datax,datay,w,*args,**kwargs)
     return vecfonc
+
+# Importer les données USPS
+def load_usps(fn):
+    with open(fn,"r") as f:
+        f.readline()
+        data = [[float(x) for x in l.split()] for l in f if len(l.split())>2]
+    tmp=np.array(data)
+    return tmp[:,1:],tmp[:,0].astype(int)
+
+# Afficher une image de USPS
+def show_usps(data):
+    plt.figure()
+    plt.imshow(data.reshape((16,16)),interpolation="nearest",cmap="gray")
+    plt.colorbar()
+    plt.show()
+
+# Affichage des isocourbes d'erreur des fonctions
+def plot_error(datax,datay,f,step=10):
+    plt.figure()
+    grid,x1list,x2list=make_grid(xmin=-4,xmax=4,ymin=-4,ymax=4)
+    plt.contourf(x1list,x2list,np.array([f(datax,datay,w) for w in grid]).reshape(x1list.shape),25)
+    plt.colorbar()
+    plt.show()
+
+# Affichage des trajectoires d'optimisation sur les isocourbes des fonctions
+def plot_trajectory(datax,datay,perceptron,step=10):
+    plt.figure()
+    w_histo, f_histo, grad_histo = perceptron.fit(datax,datay)
+    xmax, xmin = np.max(w_histo[:,0]), np.min(w_histo[:,0])
+    ymax, ymin = np.max(w_histo[:,1]), np.min(w_histo[:,1])
+    dev_x, dev_y = abs(xmax-xmin)/4, abs(ymax-ymin)/4 # defines a margin for border
+    dev_x += int(dev_x == 0)*5 # avoid dev_x = 0
+    dev_y += int(dev_y == 0)*5
+    grid,x1list,x2list=make_grid(xmin=xmin-dev_x,xmax=xmax+dev_y,ymin=ymin-dev_y,ymax=ymax+dev_y)
+    plt.contourf(x1list,x2list,np.array([perceptron.loss(datax,datay,w)\
+                                         for w in grid]).reshape(x1list.shape),25)
+    plt.colorbar()
+    plt.scatter(w_histo[:,0], w_histo[:,1], marker='+', color='black')
+    plt.show()
+
+# Affichage graphique d'un vecteur, typiquement les poids d'un perceptron
+def plot_vector (w):
+    img = plt.imshow(w, cmap = "viridis", interpolation = 'none')
+    plt.colorbar()
+    plt.show(img)
+
+# Affichage des courbes d'apprentissages du perceptron
+def plot_learning_curve(trainx, trainy, testx, testy, start=0, stop=1001, step=10):
+    err_train, err_test = [], []
+    iterations = list(range(start, stop, step))
+    for i in iterations:
+        print(i)
+        perceptron = Lineaire(hinge, hinge_g, max_iter=i, eps=0.1)
+        perceptron.fit(trainx, trainy)
+        err_train.append(perceptron.score(trainx, trainy))
+        err_test.append(perceptron.score(testx, testy))  
+    plt.plot(iterations, err_train, color='blue', label="erreur (train)")
+    plt.plot(iterations, err_test, color='red', label="erreur (test)")
+    plt.legend()
+    plt.show()
 
 ########################################
 # Implémentation
@@ -108,46 +174,10 @@ class Lineaire(object):
     def score(self, datax, datay):
         return np.mean(self.predict(datax) != datay)
 
-# Utility functions
-def load_usps(fn):
-    with open(fn,"r") as f:
-        f.readline()
-        data = [[float(x) for x in l.split()] for l in f if len(l.split())>2]
-    tmp=np.array(data)
-    return tmp[:,1:],tmp[:,0].astype(int)
 
-def show_usps(data):
-    plt.figure()
-    plt.imshow(data.reshape((16,16)),interpolation="nearest",cmap="gray")
-    plt.colorbar()
-    plt.show()
-
-def plot_error(datax,datay,f,step=10):
-    plt.figure()
-    grid,x1list,x2list=make_grid(xmin=-4,xmax=4,ymin=-4,ymax=4)
-    plt.contourf(x1list,x2list,np.array([f(datax,datay,w) for w in grid]).reshape(x1list.shape),25)
-    plt.colorbar()
-    plt.show()
-    
-def plot_trajectory(datax,datay,perceptron,step=10):
-    plt.figure()
-    w_histo, f_histo, grad_histo = perceptron.fit(datax,datay)
-    xmax, xmin = np.max(w_histo[:,0]), np.min(w_histo[:,0])
-    ymax, ymin = np.max(w_histo[:,1]), np.min(w_histo[:,1])
-    dev_x, dev_y = abs(xmax-xmin)/4, abs(ymax-ymin)/4 # defines a margin for border
-    dev_x += int(dev_x == 0)*5 # avoid dev_x = 0
-    dev_y += int(dev_y == 0)*5
-    grid,x1list,x2list=make_grid(xmin=xmin-dev_x,xmax=xmax+dev_y,ymin=ymin-dev_y,ymax=ymax+dev_y)
-    plt.contourf(x1list,x2list,np.array([perceptron.loss(datax,datay,w)\
-                                         for w in grid]).reshape(x1list.shape),25)
-    plt.colorbar()
-    plt.scatter(w_histo[:,0], w_histo[:,1], marker='+', color='black')
-    plt.show()
-
-def plot_vector (w):
-    img = plt.imshow(w, cmap = "viridis", interpolation = 'none')
-    plt.colorbar()
-    plt.show(img)
+########################################
+# Main
+########################################
 
 def main():
 
@@ -257,24 +287,23 @@ def main():
     # Données USPS
     datax_train, datay_train = load_usps("USPS_test.txt")
     datax_test, datay_test = load_usps("USPS_train.txt")
-    perceptron = Lineaire(hinge,hinge_g,max_iter=1000,eps=0.1)
-    perceptron.fit(datax_train,datay_train)
-    print("Erreur : train %f, test %f"% (perceptron.score(datax_train,datay_train),\
-                                         perceptron.score(datax_test,datay_test)))
+    
+    #6 vs 9    
+    trainx = datax_train[np.where(np.logical_or(datay_train == 6,datay_train == 9))]
+    trainy = datay_train[np.where(np.logical_or(datay_train == 6,datay_train == 9))]
+    labely_train = np.sign(trainy - 7)
+    testx = datax_test[np.where(np.logical_or(datay_test == 6,datay_test == 9))]
+    testy = datay_test[np.where(np.logical_or(datay_test == 6,datay_test == 9))]
+    labely_test = np.sign(testy - 7)
 
-    #6 vs 9
-    two_class_datax_train = datax_train[np.where(np.logical_or(datay_train == 6,datay_train == 9))]
-    two_class_datay_train = datay_train[np.where(np.logical_or(datay_train == 6,datay_train == 9))]
-    labely_train = np.sign(two_class_datay_train - 7)
-    two_class_datax_test = datax_test[np.where(np.logical_or(datay_test == 6,datay_test == 9))]
-    two_class_datay_test = datay_test[np.where(np.logical_or(datay_test == 6,datay_test == 9))]
-    labely_test = np.sign(two_class_datay_test - 7)
+    perceptron = Lineaire(hinge, hinge_g, max_iter=1000, eps=0.1)
+    perceptron.fit(trainx, labely_train)
+    print("Erreur 2 classes 6/9: train %f, test %f"% (perceptron.score(trainx,labely_train),\
+                                                      perceptron.score(testx,labely_test)))
 
-    perceptron.fit(two_class_datax_train, labely_train)
-    print("Erreur 2 classes 6/9: train %f, test %f"% (perceptron.score(two_class_datax_train,labely_train),\
-                                                      perceptron.score(two_class_datax_test,labely_test)))
-    plot_vector(perceptron.w)
+    plot_learning_curve(trainx, labely_train, testx, labely_test, start=0, stop=1001, step=10)
 
+    """
     #1 vs 8
     two_class_datax_train = datax_train[np.where(np.logical_or(datay_train == 1,datay_train == 8))]
     two_class_datay_train = datay_train[np.where(np.logical_or(datay_train == 1,datay_train == 8))]
@@ -283,14 +312,18 @@ def main():
     two_class_datay_test = datay_test[np.where(np.logical_or(datay_test == 1,datay_test == 8))]
     labely_test = np.sign(two_class_datay_test - 2)
 
+    perceptron = Lineaire(hinge, hinge_g, max_iter=1000, eps=0.1)
     perceptron.fit(two_class_datax_train, labely_train)
     print("Erreur 2 classes 1/8: train %f, test %f"% (perceptron.score(two_class_datax_train,labely_train),\
                                                       perceptron.score(two_class_datax_test,labely_test)))
     plot_vector(perceptron.w)
-
+    """
+    
     #6 vs all
     labely_train = 2 * (datay_train == 6) - 1
     labely_test = 2 * (datay_test == 6) - 1
+    
+    perceptron = Lineaire(hinge, hinge_g, max_iter=1000, eps=0.1)
     perceptron.fit(datax_train, labely_train)
     print("Erreur one vs all: train %f, test %f"% (perceptron.score(datax_train,labely_train),\
                                                    perceptron.score(datax_test,labely_test)))
