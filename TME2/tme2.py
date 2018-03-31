@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 import pickle
+from scipy.stats import multivariate_normal
 
 plt.interactive(False)
 parismap = mpimg.imread('data/paris-48.806-2.23--48.916-2.48.jpg')
@@ -42,38 +43,46 @@ grid = np.c_[xx.ravel(),yy.ravel()]
 
 ####################################################
 
-# HISTOGRAMMES-
+# METHODE DES HISTOGRAMMES
 
 ####################################################
 
+def histo(nb_bins):
+    global geo_mat
+    res, _, _ = np.histogram2d(geo_mat[:,0], geo_mat[:,1], bins=nb_bins)
+    plt.figure()
+    show_map()
+    plt.imshow(res,extent=[xmin,xmax,ymin,ymax],interpolation='none',\
+                   alpha=0.3,origin = "lower")
+    plt.colorbar()
+    plt.show()
 
-res, _, _ = np.histogram2d(geo_mat[:,0], geo_mat[:,1], bins=15)
-plt.figure()
-show_map()
-plt.imshow(res,extent=[xmin,xmax,ymin,ymax],interpolation='none',\
-               alpha=0.3,origin = "lower")
-plt.colorbar()
-plt.show()
 
+####################################################
+
+# METHODE DES NOYAUX
 
 ####################################################
 
-# METHODE DES NOYAUX-
-
-####################################################
-count = 0
+# Fenetre de Parzen
 def parzen(x, y, h):
    global geo_mat
-   global count
-   count += 1
-##   if ((count % 10000) == 0):
-##      print(count)
    s = 0
    for i in range(len(geo_mat)):
        (x_i,y_i) = geo_mat[i]
        if (abs(x-x_i) < h/2 and abs(y-y_i) < h/2):
            s += 1
-   return (s / (len(geo_mat) * h))
+   V = h * h
+   return (s / (len(geo_mat) * V))
+
+def gaussian(x, y, h):
+    global geo_mat
+    var = multivariate_normal(mean=[0, 0], cov=[[1, 0], [0, 1]]) #to estimate the gaussian distribution
+    s = 0
+    for i in range(len(geo_mat)):
+        (x_i, y_i) = geo_mat[i]
+        s += var.pdf([(x-x_i)*100, (y-y_i)*100]) #multiply *100 to scale for the gaussian distribution
+    return (s / (len(geo_mat) * h))
 
 parzen(48.3845, 2.35,2)
 
@@ -97,13 +106,17 @@ plt.imshow(res,extent=[xmin,xmax,ymin,ymax],interpolation='none',\
               alpha=0.3,origin = "lower")
 plt.colorbar()
 
-plt.show()
+#plt.show()
 
 ####################################################
 
 # discretisation pour la methode des histogrammes ?
 
+# Faible vs Forte discretisation
+
 ####################################################
+
+histo(15)
 
 ####################################################
 
