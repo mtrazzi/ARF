@@ -191,7 +191,7 @@ def main():
     # Tracé de l'isocontour de l'erreur pour MSE et HINGE
     plot_error(trainx,trainy,mse)
     plot_error(trainx,trainy,hinge)
-    """
+    
     # Modèle standard avec MSE
     perceptron = Lineaire(mse,mse_g,max_iter=1000,eps=0.01)
     perceptron.fit(trainx,trainy)
@@ -234,7 +234,7 @@ def main():
     plot_data(trainx,trainy)
     plot_trajectory(trainx,trainy,perceptron)
     plt.show()
-
+    """
     # Beware when un-commenting : those models run very slowly
     
     # Modèle mse avec projection gaussienne
@@ -317,8 +317,7 @@ def main():
     print("Erreur 2 classes 1/8: train %f, test %f"% (perceptron.score(two_class_datax_train,labely_train),\
                                                       perceptron.score(two_class_datax_test,labely_test)))
     plot_vector(perceptron.w)
-    """
-    
+        
     #6 vs all
     labely_train = 2 * (datay_train == 6) - 1
     labely_test = 2 * (datay_test == 6) - 1
@@ -328,7 +327,7 @@ def main():
     print("Erreur one vs all: train %f, test %f"% (perceptron.score(datax_train,labely_train),\
                                                    perceptron.score(datax_test,labely_test)))
     plot_vector(perceptron.w)
-    
+    """
 
 if __name__=="__main__":
     main()
