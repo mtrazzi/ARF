@@ -1,4 +1,5 @@
-# AUTHOR: Michael Trazzi (mtrazzi) and Julien Denes (jdenes)
+# AUTHORS: Michael Trazzi (mtrazzi) and Julien Denes (jdenes)
+
 from __future__ import print_function
 from __future__ import division
 import numpy as np
@@ -24,7 +25,7 @@ def make_grid(xmin=-5,xmax=5,ymin=-5,ymax=5,step=20,data=None):
     grid=np.c_[x.ravel(),y.ravel()]
     return grid, x, y
 
-# Load dataset
+# Charger le dataset
 def load_usps(filename):
     with open(filename,"r") as f:
         f.readline()
@@ -32,16 +33,16 @@ def load_usps(filename):
     tmp = np.array(data)
     return tmp[:,1:],tmp[:,0].astype(int)
 
-# Plot function and gradient evolution depending on nb of iterations
+# Afficher la valeur de l'optimum de la fonction et du gradient en fonction du nombre d'itérations
 def plot_nb_iter(f, df, x_init, eps, max_iter):
 	x_histo, f_histo, grad_histo = optimize(f, df, x_init, eps, max_iter)
 	plt.figure()
 	plt.scatter(np.arange(len(x_histo)), f_histo, label="f")
-	plt.scatter(np.arange(len(x_histo)), grad_histo, label="gradient")
+	plt.scatter(np.arange(len(x_histo)), np.mean(grad_histo, axis=1), label="gradient")
 	plt.legend()
 	plt.show()	
 
-# Plot function and optimization trajectory for f1 and f2
+# Affiche la fonction et la trajectoire d'optimisation pour f1 et f2 (en 2D)
 def plot_2d(f, df, x_init, eps, max_iter):
     x_histo, f_histo, grad_histo = optimize(f, df, x_init, eps, max_iter)
     r = sorted([x_init, x_histo[-1]])
@@ -51,7 +52,7 @@ def plot_2d(f, df, x_init, eps, max_iter):
     plt.legend()
     plt.show()
 
-# Plot function and optimization trajectory for f3
+# Affiche la fonction et la trajectoire d'optimisation pour f3 (en 3D)
 def plot_3d(f, df, x_init, eps, max_iter):
     grid,xx,yy = make_grid(-1,1,-1,1)
     plt.contourf(xx,yy,f(grid).reshape(xx.shape))
@@ -65,20 +66,26 @@ def plot_3d(f, df, x_init, eps, max_iter):
     plt.legend()
     plt.show()
     
-# Plot function and optimization trajectory for f1 and f2
+# Affiche la log distance à l'optimisation en fonction du nombre d'itérations
 def plot_distance(f, df, x_init, eps, max_iter):
     x_histo, f_histo, grad_histo = optimize(f, df, x_init, eps, max_iter)
     x_dist = np.log(np.linalg.norm((x_histo - x_histo[-1]), axis=1))
-    plt.scatter(np.arange(len(x_dist)), x_dist, label="log distance à l'optimum")
+    plt.plot(np.arange(len(x_dist)), x_dist, color='blue', label="log distance à l'optimum")
     plt.xticks(np.arange(0, len(x_dist), 5))
     plt.legend()
     plt.show()
+    
+# Affichage graphique d'un vecteur ou d'une matrice, typiquement les poids d'un perceptron
+def plot_vector (w):
+    img = plt.imshow(w, cmap = "viridis", interpolation = 'none')
+    plt.colorbar()
+    plt.show(img)
         
 ########################################
 # Algorithme de descente de gradient
 ########################################
 
-# Gradient descent implementation given function, gradient and other parameters
+# Implémentation de l'algo de descente de gradient étant donné la fonction son grad, le pas, etc.
 def optimize(fonc, dfonc, x_init, eps, max_iter=20):
     x_histo, f_histo, grad_histo = x_init, fonc(x_init), dfonc(x_init)
     x = x_init
@@ -93,7 +100,7 @@ def optimize(fonc, dfonc, x_init, eps, max_iter=20):
 # Optimisation de fonctions
 ########################################
 
-# A set of mathematical functions to optimize
+# Ensemble de fonctionc mathématiques à optimiser
 
 def f1(x):
     return x * np.cos(x)
@@ -126,6 +133,7 @@ class Learner(object):
         """
         self.max_iter = max_iter
         self.eps = eps
+        self.w = None
 
     def fit(self, datax, datay):
         """ :datax: donnees de train
@@ -164,6 +172,7 @@ def main():
     # Affichage de f et df en fonction du nombre d'itérations
     plot_nb_iter(f1, df1, 5, 0.1, 30)
     plot_nb_iter(f2, df2, 5, 0.1, 30)
+    plot_nb_iter(f3, df3, np.array([-1,-1]).reshape(1,2), 0.001, 20)
     
     # Affichage 2D de f1, f2 et 3D de f3
     plot_2d(f1, df1, 5, 0.1, 30)
@@ -187,21 +196,25 @@ def main():
     datay_test_2 = datay_test[np.where(np.logical_or(datay_test == 1,datay_test == 8))]
     labely_test = np.sign(datay_test_2 - 2)
 
-    # Construction et entrainement
     model = Learner(max_iter = 1000, eps = 0.05)
     model.fit(datax_train_2, labely_train)
     print("Erreur de classification 6/9: train %f, test %f"\
           % (model.score(datax_train_2,labely_train),model.score(datax_test_2,labely_test)))
 
-    # Essai classification 1 versus toutes les autres
+    # Affichage des poids
+    weights = model.w
+    plot_vector(weights.reshape(16,16))
+    
+    # Classification 1 versus toutes les autres
     model2 = Learner(max_iter = 1000, eps = 0.05)
     labely_train = 2 * (datay_train == 6) - 1
     labely_test = 2 * (datay_test == 6) - 1
+    
     model2.fit(datax_train, labely_train)
     print("Erreur one vs all: train %f, test %f"\
           % (model2.score(datax_train,labely_train),model2.score(datax_test,labely_test)))
         
-    # Essai aussi avec gen_arti pour tests de performances
+    # Essai sur gen_arti pour tester les performances
     trainx, trainy = gen_arti(nbex=1000, data_type=0,epsilon=1)
     testx, testy = gen_arti(nbex=1000, data_type=0,epsilon=1)
     model1 = Learner(max_iter = 100, eps = 0.01)

@@ -1,8 +1,9 @@
+# AUTHORS: Michael Trazzi (mtrazzi) and Julien Denes (jdenes)
+
 from arftools import plot_data, plot_frontiere, make_grid, gen_arti
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import cm
-
 
 ########################################
 # Fonctions utilitaires
@@ -56,7 +57,7 @@ def plot_trajectory(datax,datay,perceptron,step=10):
     plt.scatter(w_histo[:,0], w_histo[:,1], marker='+', color='black')
     plt.show()
 
-# Affichage graphique d'un vecteur, typiquement les poids d'un perceptron
+# Affichage graphique d'un vecteur ou d'une matrice, typiquement les poids d'un perceptron
 def plot_vector (w):
     img = plt.imshow(w, cmap = "viridis", interpolation = 'none')
     plt.colorbar()
@@ -67,7 +68,6 @@ def plot_learning_curve(trainx, trainy, testx, testy, start=0, stop=1001, step=1
     err_train, err_test = [], []
     iterations = list(range(start, stop, step))
     for i in iterations:
-        print(i)
         perceptron = Lineaire(hinge, hinge_g, max_iter=i, eps=0.1)
         perceptron.fit(trainx, trainy)
         err_train.append(perceptron.score(trainx, trainy))
@@ -118,7 +118,7 @@ class Lineaire(object):
         self.project = project
         self.base = None
 
-    # A general function to add projections
+    # Une fonction pour ajouter une projection aux données
     def projection(self, datax):
         res = datax
         
@@ -154,7 +154,6 @@ class Lineaire(object):
         
         w_histo, f_histo, grad_histo = self.w, self.loss(datax, datay, self.w), self.loss_g(datax, datay, self.w)
         
-
         for i in range(self.max_iter):
             self.w = self.w - self.eps * self.loss_g(datax, datay, self.w)
             w_histo = np.vstack((w_histo, self.w))
@@ -181,6 +180,7 @@ class Lineaire(object):
 
 def main():
 
+    
     # Création des données selon deux distributions gaussiennes
     plt.ion()
     trainx,trainy = gen_arti(nbex=1000, data_type=0, epsilon=1)
@@ -212,6 +212,7 @@ def main():
     plot_trajectory(trainx,trainy,perceptron)
     plt.show()
     
+    
     # Modèle MSE avec biais
     perceptron = Lineaire(mse,mse_g,max_iter=1000,eps=0.01, bias=True)
     perceptron.fit(trainx,trainy)
@@ -234,37 +235,15 @@ def main():
     plot_data(trainx,trainy)
     plot_trajectory(trainx,trainy,perceptron)
     plt.show()
-    """
-    # Beware when un-commenting : those models run very slowly
     
-    # Modèle mse avec projection gaussienne
-    perceptron = Lineaire(mse, mse_g, max_iter=1000, eps=0.01, bias=False, project="gauss")
-    perceptron.base = base
-    perceptron.fit(trainx,trainy)
-    print("\nErreur mse gauss : train %f, test %f"\
-          %(perceptron.score(trainx,trainy),perceptron.score(testx,testy)))
-    plt.figure()
-    plot_frontiere(trainx,perceptron.predict,200)
-    plot_data(trainx,trainy)
-    plot_trajectory(trainx,trainy,perceptron)
-    plt.show()
 
+    # Attention : l'affichage de la frontières avec projections sont très longues à générer
+    """
     # Modèle hinge avec projection gaussienne
     perceptron = Lineaire(hinge, hinge_g, max_iter=1000, eps=0.5, bias=False, project="gauss")
     perceptron.base = base
     perceptron.fit(trainx,trainy)
     print("\nErreur hinge gauss : train %f, test %f"\
-          %(perceptron.score(trainx,trainy),perceptron.score(testx,testy)))
-    plt.figure()
-    plot_frontiere(trainx,perceptron.predict,200)
-    plot_data(trainx,trainy)
-    plot_trajectory(trainx,trainy,perceptron)
-    plt.show()
-
-    # Modèle mse avec projection polynomiale
-    perceptron = Lineaire(mse, mse_g, max_iter=100, eps=0.01, bias=False, project="polynomial")
-    perceptron.fit(trainx,trainy)
-    print("\nErreur mse polynomial : train %f, test %f"\
           %(perceptron.score(trainx,trainy),perceptron.score(testx,testy)))
     plt.figure()
     plot_frontiere(trainx,perceptron.predict,200)
@@ -301,22 +280,8 @@ def main():
     print("Erreur 2 classes 6/9: train %f, test %f"% (perceptron.score(trainx,labely_train),\
                                                       perceptron.score(testx,labely_test)))
 
-    plot_learning_curve(trainx, labely_train, testx, labely_test, start=0, stop=1001, step=10)
-
-    """
-    #1 vs 8
-    two_class_datax_train = datax_train[np.where(np.logical_or(datay_train == 1,datay_train == 8))]
-    two_class_datay_train = datay_train[np.where(np.logical_or(datay_train == 1,datay_train == 8))]
-    labely_train = np.sign(two_class_datay_train - 2)
-    two_class_datax_test = datax_test[np.where(np.logical_or(datay_test == 1,datay_test == 8))]
-    two_class_datay_test = datay_test[np.where(np.logical_or(datay_test == 1,datay_test == 8))]
-    labely_test = np.sign(two_class_datay_test - 2)
-
-    perceptron = Lineaire(hinge, hinge_g, max_iter=1000, eps=0.1)
-    perceptron.fit(two_class_datax_train, labely_train)
-    print("Erreur 2 classes 1/8: train %f, test %f"% (perceptron.score(two_class_datax_train,labely_train),\
-                                                      perceptron.score(two_class_datax_test,labely_test)))
-    plot_vector(perceptron.w)
+    plot_vector(perceptron.w.reshape(16,16))
+    plot_learning_curve(trainx, labely_train, testx, labely_test, start=0, stop=501, step=10)
         
     #6 vs all
     labely_train = 2 * (datay_train == 6) - 1
@@ -326,8 +291,13 @@ def main():
     perceptron.fit(datax_train, labely_train)
     print("Erreur one vs all: train %f, test %f"% (perceptron.score(datax_train,labely_train),\
                                                    perceptron.score(datax_test,labely_test)))
-    plot_vector(perceptron.w)
+    
+    # Attention : la courbe d'apprentissage est très longue à générer
     """
-
+    plot_vector(perceptron.w.reshape(16,16))
+    plot_learning_curve(datax_train, labely_train, datax_test, labely_test, start=0, stop=501, step=10)
+    """
+    
 if __name__=="__main__":
     main()
+    

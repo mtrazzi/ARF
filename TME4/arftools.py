@@ -26,7 +26,7 @@ def plot_frontiere(data,f,step=20):
     :return:
     """
     grid,x,y=make_grid(data=data,step=step)
-    plt.contourf(x,y,f(grid).reshape(x.shape),colors=('salmon','palegreen'),levels=[-1,0,1])
+    plt.contourf(x,y,f(grid).reshape(x.shape),colors=('gray','blue'),levels=[-1,0,1])
 
 def make_grid(data=None,xmin=-5,xmax=5,ymin=-5,ymax=5,step=20):
     """ Cree une grille sous forme de matrice 2d de la liste des points
@@ -39,8 +39,7 @@ def make_grid(data=None,xmin=-5,xmax=5,ymin=-5,ymax=5,step=20):
     :return: une matrice 2d contenant les points de la grille
     """
     if data is not None:
-        xmax, xmin, ymax, ymin = np.max(data[:,0])+1,  np.min(data[:,0])-1,\
-                                    np.max(data[:,1])+1, np.min(data[:,1])-1
+        xmax, xmin, ymax, ymin = np.max(data[:,0]),  np.min(data[:,0]), np.max(data[:,1]), np.min(data[:,1])
     x, y =np.meshgrid(np.arange(xmin,xmax,(xmax-xmin)*1./step), np.arange(ymin,ymax,(ymax-ymin)*1./step))
     grid=np.c_[x.ravel(),y.ravel()]
     return grid, x, y
