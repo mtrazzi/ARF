@@ -12,7 +12,7 @@ from mpl_toolkits.mplot3d import axes3d
 # Fonctions utilitaires
 ########################################
 
-# Make grid
+# Faire la grille pour affichage 3D
 def make_grid(xmin=-5,xmax=5,ymin=-5,ymax=5,step=20,data=None):
     """ Cree une grille sous forme de matrice 2d de la liste des points
     :return: une matrice 2d contenant les points de la grille, la liste x, la liste y
@@ -25,7 +25,7 @@ def make_grid(xmin=-5,xmax=5,ymin=-5,ymax=5,step=20,data=None):
     grid=np.c_[x.ravel(),y.ravel()]
     return grid, x, y
 
-# Charger le dataset
+# Charger le dataset USPS
 def load_usps(filename):
     with open(filename,"r") as f:
         f.readline()
@@ -188,7 +188,7 @@ def main():
     datax_train, datay_train = load_usps("USPS_test.txt")
     datax_test, datay_test = load_usps("USPS_train.txt")
     
-    # On test la reconnaissance 6 vs 9 (on isole puis transforme les données en -1 et 1)
+    ## On test la reconnaissance 6 vs 9 (on isole puis transforme les données en -1 et 1)
     datax_train_2 = datax_train[np.where(np.logical_or(datay_train == 1,datay_train == 8))]
     datay_train_2 = datay_train[np.where(np.logical_or(datay_train == 1,datay_train == 8))]
     labely_train = np.sign(datay_train_2 - 2)
@@ -201,11 +201,11 @@ def main():
     print("Erreur de classification 6/9: train %f, test %f"\
           % (model.score(datax_train_2,labely_train),model.score(datax_test_2,labely_test)))
 
-    # Affichage des poids
+    ## Affichage des poids
     weights = model.w
     plot_vector(weights.reshape(16,16))
     
-    # Classification 1 versus toutes les autres
+    ## Classification 1 versus toutes les autres
     model2 = Learner(max_iter = 1000, eps = 0.05)
     labely_train = 2 * (datay_train == 6) - 1
     labely_test = 2 * (datay_test == 6) - 1
@@ -214,7 +214,7 @@ def main():
     print("Erreur one vs all: train %f, test %f"\
           % (model2.score(datax_train,labely_train),model2.score(datax_test,labely_test)))
         
-    # Essai sur gen_arti pour tester les performances
+    ## Essai sur gen_arti pour tester les performances
     trainx, trainy = gen_arti(nbex=1000, data_type=0,epsilon=1)
     testx, testy = gen_arti(nbex=1000, data_type=0,epsilon=1)
     model1 = Learner(max_iter = 100, eps = 0.01)
