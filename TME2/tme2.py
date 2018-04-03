@@ -1,4 +1,4 @@
-import numpy as np
+import numpy as np 
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 import pickle
@@ -13,7 +13,7 @@ ymin,ymax = 48.806,48.916 ## coord_y min et max
 
 def show_map():
     plt.imshow(parismap,extent=[xmin,xmax,ymin,ymax],aspect=1.5)
-    # plt.show()
+    #plt.show()
     # extent pour controler l'echelle du plan
 
 poidata = pickle.load(open("data/poi-paris.pkl","rb"))
@@ -28,10 +28,10 @@ geo_mat = np.zeros((len(poidata[typepoi]),2))
 for i,(k,v) in enumerate(poidata[typepoi].items()):
     geo_mat[i,:]=v[0]
 
-## Affichage brut des poi
-show_map()
-## alpha permet de regler la transparence, s la taille
-plt.scatter(geo_mat[:,1],geo_mat[:,0],alpha=0.8,s=3)
+### Affichage brut des poi
+#show_map()
+### alpha permet de regler la transparence, s la taille
+#plt.scatter(geo_mat[:,1],geo_mat[:,0],alpha=0.8,s=3)
 
 
 ###################################################
@@ -51,6 +51,7 @@ def histo(nb_bins):
     global geo_mat
     res, _, _ = np.histogram2d(geo_mat[:,0], geo_mat[:,1], bins=nb_bins)
     plt.figure()
+    plt.title('Histogramme: ' + str(nb_bins) + ' subdivisions')
     show_map()
     plt.imshow(res,extent=[xmin,xmax,ymin,ymax],interpolation='none',\
                    alpha=0.3,origin = "lower")
@@ -65,7 +66,7 @@ def histo(nb_bins):
 ####################################################
 
 # Fenetre de Parzen
-def parzen(x, y, h):
+def parzen(x, y, h, sigma=1): #sigma only for kernel_method
    global geo_mat
    s = 0
    for i in range(len(geo_mat)):
@@ -75,9 +76,9 @@ def parzen(x, y, h):
    V = h * h
    return (s / (len(geo_mat) * V))
 
-def gaussian(x, y, h):
+def gaussian(x, y, h, sigma=1):
     global geo_mat
-    var = multivariate_normal(mean=[0, 0], cov=[[1, 0], [0, 1]]) #to estimate the gaussian distribution
+    var = multivariate_normal(mean=[0, 0], cov=[[sigma, 0], [0, sigma]]) #to estimate the gaussian distribution
     s = 0
     for i in range(len(geo_mat)):
         (x_i, y_i) = geo_mat[i]
@@ -90,48 +91,72 @@ nb_pix_x, nb_pix_y, _ = np.shape(parismap)
 xedges = np.linspace(xmin, xmax, nb_pix_x // 100)
 yedges = np.linspace(ymin, ymax, nb_pix_y // 100)
 
-def kernel_method(kernel, h):
+def kernel_method(kernel, h, sigma=1):
    global nb_pix_x, nb_pix_y, xedges, yedges
    mat = np.zeros((nb_pix_x // 100, nb_pix_y // 100))
    for x in range(nb_pix_x // 100):
        for y in (range(nb_pix_y // 100)):
-           mat[x,y] = kernel(yedges[y], xedges[x], h)
+           mat[x,y] = kernel(yedges[y], xedges[x], h, sigma)
 ##         print(yedges[y], xedges[x], h, mat[x,y])
    return mat
 
-res = kernel_method(parzen,0.01)
-plt.figure()
-show_map()
-plt.imshow(res,extent=[xmin,xmax,ymin,ymax],interpolation='none',\
-              alpha=0.3,origin = "lower")
-plt.colorbar()
+def main():
 
-#plt.show()
+    ####################################################
+    
+    # discretisation pour la methode des histogrammes ?
+    
+    # Faible vs Forte discretisation
+    
+    ####################################################
+    #for i in range(1,5):
+    #    histo(5 * i)
 
-####################################################
+    ####################################################
+    
+    # Quel est le role des parametres des methodes a noyaux ?
+    
+    ####################################################
 
-# discretisation pour la methode des histogrammes ?
+    # PARZEN
+    
+    for h in [0.005, 0.01, 0.05]:    
+        res = kernel_method(parzen,h)
+        plt.figure()
+        show_map()
+        plt.title('Parzen: fenêtre de ' + str(h))
+        plt.imshow(res,extent=[xmin,xmax,ymin,ymax],interpolation='none',\
+                      alpha=0.3,origin = "lower")
+        plt.colorbar()
+        plt.show()
 
-# Faible vs Forte discretisation
+    # GAUSSIAN
+    h = 0.1
+    for sigma in [0.1, 0.5, 1]:    
+        res = kernel_method(gaussian,h, sigma)
+        plt.figure()
+        show_map()
+        plt.title('Gaussian: sigma=' + str(sigma) + ' ,h=' + str(h))
+        plt.imshow(res,extent=[xmin,xmax,ymin,ymax],interpolation='none',\
+                      alpha=0.3,origin = "lower")
+        plt.colorbar()
+        plt.show()
 
-####################################################
+    ####################################################
+    
+    # Comment choisir de maniere automatique les meilleurs parametres ?
+    
+    ####################################################
 
-histo(15)
+    # Grid search
+      
+    ####################################################
+    
+    # La question reliee : comment estimer la qualite de votre modèle
+    
+    ####################################################
 
-####################################################
+    # Voir si l'echantillonage selon la densité estimé correspond aux données
 
-# Quel est le role des parametres des methodes a noyaux ?
-
-####################################################
-
-####################################################
-
-# Comment choisir de maniere automatique les meilleurs parametres ?
-
-####################################################
-
-####################################################
-
-# La question reliee : comment estimer la qualite de votre modele ?
-
-####################################################
+if  __name__ == "__main__":
+    main()
