@@ -12,6 +12,8 @@
 \usepackage{parskip}
 \usepackage{hyperref}
 \usepackage{verbatim}
+\usepackage{soul}
+
 
 % FOR COLORS WITH PYTHON CODE
 
@@ -25,29 +27,6 @@
 \definecolor{deepgreen}{rgb}{0,0.5,0}
 
 \setlength{\parindent}{0ex}
-
-% Python style for highlighting
-\newcommand\pythonstyle{\lstset{
-language=Python,
-basicstyle=\ttm,
-otherkeywords={self},             % Add keywords here
-keywordstyle=\ttb\color{deepblue},
-emph={MyClass,__init__},          % Custom highlighting
-emphstyle=\ttb\color{deepred},    % Custom highlighting style
-stringstyle=\color{deepgreen},
-frame=tb,                         % Any extra options here
-showstringspaces=false            % 
-}}
-
-% Python environment
-\lstnewenvironment{python}[1][]
-{
-\pythonstyle
-\lstset{#1}
-}
-{}
-
-%%% END %%%
 
 \title{Compte Rendu de TME \\ Apprentissage et Reconnaissance de Forme}
 \author{Julien Denes, Michael Trazzi}
@@ -65,26 +44,6 @@ L'ensemble du travail présenté dans ce rapport, y compris ce document lui-mêm
 
 \section*{TME 1 - Arbres de décision, sélection de modèles}
 
-\subsection*{Calcul de l'entropie}
-\begin{python}
-def entropie(vect):
-    _, counts = np.unique(vect, return_counts=True)
-    p_y = np.array(counts / len(vect))
-    return (-np.sum(p_y * np.log(p_y)))
-\end{python}
-
-\begin{python}
-def entropie_cond(list_vect):
-    n = len(list_vect)
-    total_nb = sum(len(part) for part in list_vect)
-    p = np.array((1,n))
-    H = np.array((1, n))
-    for i in range(n):
-            p[i] = len(list_vect[i]) / total_nb
-            H[i] = entropie(list_vect[i])
-    return (np.sum(H * p))
-\end{python}
-
 \subsection*{Quelques expériences préliminaires}
 
 \begin{figure}[ht!]
@@ -95,11 +54,7 @@ def entropie_cond(list_vect):
 \end{center}
 \end{figure}
 
-\textbf{Q 1.4} Sur les données IMDB, nous avons testé des profondeurs d'arbres allant de 5 à 50. Plus la profondeur est grande, et plus on \underline{surapprend} notre base de données d'apprentissage.
-
-\textbf{Q 1.5} Pour une profondeur de 5 (resp. 50), on obtient un score de 0.736429038587 (resp. 0.900152605189). On a bien un \underline{surapprentissage} de nos données dans le cas de la profondeur de 50.
-
-\textbf{Q 1.6} Le score ainsi défini \underline{n'est pas un indicateur fiable} : il indique uniquement notre capacité a surapprendre la base d'apprentissage, mais ne tient pas compte du pouvoir de généralisation.
+Sur les données IMDB, nous avons testé des profondeurs d'arbres allant de 5 à 50. Pour une profondeur de 5 (resp. 50), on obtient un score de 0.736429038587 (resp. 0.900152605189). On observe un \underline{surapprentissage} de nos données dans le cas de la profondeur de 50.  Plus généralement, plus la profondeur est grande, et plus on \underline{surapprend} notre base de données d'apprentissage. Le score ainsi défini \underline{n'est pas un indicateur fiable} : il indique uniquement notre capacité a surapprendre la base d'apprentissage, mais ne tient pas compte du pouvoir de généralisation.
 
 \subsection*{Sur et sous apprentissage}
 
@@ -119,28 +74,110 @@ def entropie_cond(list_vect):
 \end{center}
 \end{figure}
 
-\textbf{Q 1.7} (cf. Figures 2 et 3 pour les courbes)
+Avec peu d'exemples d'apprentissage, \ul{le score se stabilise tres rapidement en fonction de la profondeur}. Avoir un arbre très profond avec seulement 1000 exemples ne fait pas varier le score. A contrario, avec l'ensemble de la base d'apprentissage, \ul{le score continue a varier jusqu'a une prondeur de 25}.
 
-\textbf{Q 1.8} Avec peu d'exemples d'apprentissage, le score se stabilise tres rapidement en fonction de la profondeur. Avoir un arbre tres profond avec seulement 1000 exemples ne fait pas varier le score. A contrario, avec l'ensemble de la base d'apprentissage, le score continue a varier jusqu'a une prondeur de 25.
-
-\textbf{Q 1.9} Mes resultats ne me semblent pas fiables (seulement 5 points pour chaque courbe, base d'apprentissage de seulement quelques milliers d'exemples). Pour les ameliorer il faudrait prendre plus d'exemples (10 000 000), plus de répartitions (au moins 5) et plus de points (100 profondeurs différentes).
+Nos résultats ne nous semblent pas fiables (seulement 5 points pour chaque courbe, base d'apprentissage de seulement quelques milliers d'exemples). Pour les ameéliorer il faudrait prendre \ul{plus d'exemples} (10 000 000), \ul{plus de repartitions} (au moins 5) et \ul{plus de points} (100 profondeurs différentes).
 
 
 %%% END TME1 %%%
 
 \section*{TME 2 - Estimation de densité - Expérimentations}
 
-\subsection*{Méthode des histogrammes}
+Dans cette partie, on cherche à estimer par diverses méthodes la densités de certains Points of Interest (POI) à Paris à partir de données fournis par google maps. Nous avons choisi de travailler avec un POI en particulier: \ul{les nightclubs}.
 
-\subsection*{Méthode à noyaux}
+\begin{figure}[ht!]
+\begin{center}
+\includegraphics[scale=0.5]{nightclubs.png}
+\label{apprentissage_prof2}
+\end{center}
+\end{figure}
+
+\subsection*{Méthode des histogrammes/noyaux}
+
+Afin d'obtenir une estimation de densité, nous avons utilisé deux méthodes: une méthode par histogramme et une méthode d'estimation par noyaux. Les deux noyaux considérés sont la fenêtre de Parzen et le noyau Gaussien.
 
 \subsection*{Différence entre faible et forte discrétisation}
 
+Pour la méthode des histogrammes nous avons fait varier le pas \verb!h! de discrétisation, inversement proportionnel au nombre de \verb!bins!.
+
+\begin{figure}[ht!]
+\begin{center}
+\begin{minipage}{0.45\textwidth}
+\includegraphics[scale=0.5]{Histo5.png}
+\label{f1_trajectoire}
+\end{minipage}\hfill
+\begin{minipage}{0.45\textwidth}
+\includegraphics[scale=0.5]{Histo10.png}
+\label{f2_trajectoire}
+\end{minipage}
+\end{center}
+\end{figure}
+
+\begin{figure}[ht!]
+\begin{center}
+\begin{minipage}{0.45\textwidth}
+\includegraphics[scale=0.5]{Histo15.png}
+\label{f1_trajectoire}
+\end{minipage}\hfill
+\begin{minipage}{0.45\textwidth}
+\includegraphics[scale=0.5]{Histo20.png}
+\label{f2_trajectoire}
+\end{minipage}
+\end{center}
+\end{figure}
+
+On voit que lorsqu'on on a une trop faible discrétisation (5 subdivisions par axe) il est impossible d'estimer correctement la densité. Lorsque le pas diminue, on obtient des estimations correctes (10/15 subdivisions). A partir de 20 subdivisions par axe on commence à manquer de données (pas suffisamment d'échantillons par subdivision).
+
 \subsection*{Rôle des parametres des méthodes a noyaux}
+
+\begin{figure}[ht!]
+\begin{center}
+\begin{minipage}{0.45\textwidth}
+\includegraphics[scale=0.5]{Parzen0005.png}
+\label{f1_trajectoire}
+\end{minipage}\hfill
+\begin{minipage}{0.45\textwidth}
+\includegraphics[scale=0.5]{Parzen001.png}
+\label{f2_trajectoire}
+\end{minipage}
+\end{center}
+\end{figure}
+
+\begin{figure}[ht!]
+\begin{center}
+\begin{minipage}{0.45\textwidth}
+\includegraphics[scale=0.5]{Parzen005.png}
+\label{f1_trajectoire}
+\end{minipage}\hfill
+\begin{minipage}{0.45\textwidth}
+\includegraphics[scale=0.5]{Gaussian01.png}
+\label{f2_trajectoire}
+\end{minipage}
+\end{center}
+\end{figure}
+
+\begin{figure}[ht!]
+\begin{center}
+\begin{minipage}{0.45\textwidth}
+\includegraphics[scale=0.5]{Gaussian01.png}
+\label{f1_trajectoire}
+\end{minipage}\hfill
+\begin{minipage}{0.45\textwidth}
+\includegraphics[scale=0.5]{Gaussian10.png}
+\label{f2_trajectoire}
+\end{minipage}
+\end{center}
+\end{figure}
+
+Pour les méthodes à noyaux, le paramètre h est pertinent uniquement pour le cas de la fenêtre de Parzen. Pour le noyau Gaussien c'est l'écart type qui s'est avéré discriminant. On voit que pour la fenêtre de Parzen, il faut environ h égal à 0.01 pour avoir une estimation correcte, et que passé 0.05 notre densité commence à devenir floue. Le même constat se fait pour un noyau gaussien : il faut un écart-type aux alentours de 0.1.
 
 \subsection*{Choix automatique des meilleurs paramètres}
 
+Pour trouver automatiquement les meilleurs paramètres on a effectué un grid search avec des échelles logarithmiques.
+
 \subsection*{Estimation de la qualité du modèle}
+
+Pour estimer graphiquement la qualité du modèle on peut générer un échantillon suivant la densité obtenue et voir si cela correspond aux données.
 
 \section*{TME 3 - Descente de gradient}
 
@@ -227,7 +264,7 @@ On propose enfin d'afficher les courbes de log distance entre la valeur estimée
 
 \subsection*{Régression logistique}
 
-La classe correspondant au classifieur basé sur la régression logistique est nommé \verb!Learner! dans notre implémentation sous Python. Il dispose d'une méthode d'initialisation, des méthodes \verb!fit!, \verb!predict! et \verb!score! comme définies dans l'énoncé, ainsi que des méthodes \verb!loss! qui calcule l'erreur des associée à ce modèle aux données passées en entrée, et d'une méthode \verb!grad\_loss! qui fournit le gradient de cette fonction d'erreur.
+La classe correspondant au classifieur basé sur la régression logistique est nommé \verb!Learner! dans notre implémentation sous Python. Il dispose d'une méthode d'initialisation, des méthodes \verb!fit!, \verb!predict! et \verb!score! comme définies dans l'énoncé, ainsi que des méthodes \verb!loss! qui calcule l'erreur des associée à ce modèle aux données passées en entrée, et d'une méthode \verb!grad_loss! qui fournit le gradient de cette fonction d'erreur.
 
 On commence par tester ce classifieur sur les données générées artificiellement grâce à la fonction \verb!gen_arti! empruntée aux outils du TME4 : celui-ci se révèle très performant sur ces données, avec une erreur de $8\%$ en entrainement et $9\%$ en test (voir Figure \ref{mse_genarti}).
 
@@ -384,6 +421,36 @@ Nous avons également appliqué une projection polynomiale sur les données 2D. 
 \end{figure}
 
 \section*{TME 6 - SVM et Noyaux}
+
+Dans cette partie nous cherchons à faire de la classification sur les mêmes données qu'au TME5, mais en utilisant les Support Vector Machines (SVM). Notre outil principal aura été \verb!scikit-learn!. Nous avons testé quatre kernels distincts : kernel linéaire, polynomial, rbf et sigmoid. 
+
+\begin{figure}[ht!]
+\begin{center}
+\begin{minipage}{0.45\textwidth}
+\includegraphics[scale=0.5]{linear.png}
+\label{f1_logdist}
+\end{minipage}\hfill
+\begin{minipage}{0.45\textwidth}
+\includegraphics[scale=0.5]{poly.png}
+\label{f2_logdist}
+\end{minipage}
+\end{center}
+\end{figure}
+
+\begin{figure}[ht!]
+\begin{center}
+\begin{minipage}{0.45\textwidth}
+\includegraphics[scale=0.5]{rbf.png}
+\label{f1_logdist}
+\end{minipage}\hfill
+\begin{minipage}{0.45\textwidth}
+\includegraphics[scale=0.5]{sigmoid.png}
+\label{f2_logdist}
+\end{minipage}
+\end{center}
+\end{figure}
+
+On voit que les noyaux linéaires et polynomiaux ont des comportements similaires, à cela près que le kernel polynomial est moins certain pour les points à la frontière. Le kernel qui sépare le mieux est rbf, et sigmoid est complètement à côté de la plaque.
 
 \end{document}
 
