@@ -36,17 +36,22 @@ def main():
     testx,testy = gen_arti(nbex=1000,data_type=0,epsilon=1)
     clf = svm.SVC(probability=True)
     clf.fit(trainx, trainy)
-    #for kernel in ['linear', 'rbf', 'poly', 'sigmoid']:
-    #    clf = fit_kernel(trainx, trainy, kernel)
-    #    plot_frontiere_proba(testx,lambda x : clf.predict_proba(x)[:,0],step=50)
-    #    plot_data(testx, testy)
-    #    plt.show()
+    for kernel in ['linear', 'rbf', 'poly', 'sigmoid']:
+        clf = fit_kernel(trainx, trainy, kernel)
+        plot_frontiere_proba(testx,lambda x : clf.predict_proba(x)[:,0],step=50)
+        plot_data(testx, testy)
+        plt.title('kernel:' + kernel)
+        plt.show()
 
     # Testing gaussian parameters
 
-    #for sigma_2 in np.linspace(0.001, 1, 100):
+    #for sigma_2 in [0.01, 10, 100]:
     #    clf = svm.SVC(probability=True, kernel='rbf')
-    #    clf.fit(datax, datay)
+    #    clf.fit(trainx, trainy)
+    #    plot_frontiere_proba(testx,lambda x : clf.predict_proba(x)[:,0],step=50)
+    #    plot_data(testx, testy)
+    #    plt.title('gaussian, sigma^2=:' + str(sigma_2))
+    #    plt.show()
 
 
     # GRID SEARCH
@@ -55,8 +60,8 @@ def main():
     classifiers = []
     for C in C_2d_range:
         for gamma in gamma_2d_range:
-            clf = SVC(C=C, gamma=gamma)
-            clf.fit(X_2d, y_2d)
+            clf = svm.SVC(C=C, gamma=gamma)
+            clf.fit(trainx, trainy)
             classifiers.append((C, gamma, clf))
 
     ## NOTE : Parametre C depend du nombre d'exemples. Utiliser NuSVC pour qqchose d'indépendant du nb d'exemples
@@ -64,18 +69,7 @@ def main():
     #print(clf.support_vectors_) #Support vectors : plus il y a de support vector, plus on a un modele complexe et on surapprend
 
     ## Noyau Polynomial : cf ce qui avait ete fait TME precedent.
-    # Projection polynomiale : K(x,y) = (1 + <x,y>)^2 = < phi(x), phi(y) >
-
-    ############################
-
-    # APPRENTISSAGE MULTI-CLASSE
-
-    # SVM ET GRID-SEARCH
-
-    ############################
-
-    # Not to do
-
+    # Projection polynomiale : K(x,y) = (1 + <x,y>)^2 = < phi(x), phi(y) >œ
 
     return 0
 
