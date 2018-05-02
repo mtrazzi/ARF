@@ -5,19 +5,26 @@ from ple.games.flappybird import FlappyBird
 from ple import PLE
 import gym_ple
 import matplotlib.pyplot as plt
+import time
+from subprocess import call
 
-
-
-def test_gym():
-    for game_name in ["Taxi-v2","FlappyBird-v0"]:
+def test_taxi(eve):
+    for game_name in ["Taxi-v2"]:
         game = gym.make(game_name)
         game.reset()
         r = 0
-        for i in range(100):
-            action = game.action_space.sample()
+        last_reward, last_action = 0, 0
+        for i in range(1000):
+            action = no_block(game.action_space, last_reward, last_action)
+            print('action is ', action)
             observation,reward,done,info = game.step(action)
-            r+=reward
-            game.render()
+            try :
+                game.render()
+                r+=reward
+            except:
+                r-=reward
+            last_reward, last_action = reward, action
+            input("Press Enter to continue...")
             print("iter {} : action {}, reward {}, state {} ".format(i,action, reward,observation))
             if done:
                 break
@@ -45,3 +52,24 @@ class Eve(object):
         self.rewards[action]+=r
         self.times[action]+=1
 
+def uniforme(action_space):
+    print("action space: |", action_space, "|")
+    return action_space.sample()
+
+def only_move(action_space):
+    return 3
+
+def no_block(action_space, last_reward, last_action):
+    if last_reward < 0:
+        return action_space.sample()
+    else:
+        return last_action
+
+
+def main():
+    eve = Eve()
+    test_taxi(eve)
+
+
+if __name__ == '__main__':
+    main()
